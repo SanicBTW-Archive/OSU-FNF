@@ -1,0 +1,13 @@
+{
+	"songs": [
+		["test", "bf", [0, 0, 0]]
+	],
+
+	"storyName": "",
+	"weekBefore": "tutorial",
+	"weekName": "Placeholder",
+	"startUnlocked": true,
+
+	"hideStoryMode": false,
+	"hideFreeplay": false
+}
