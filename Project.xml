@@ -42,9 +42,9 @@
 
 	<assets path="assets/preload" rename="assets" exclude="*.mp3"/>
 	
-	<!-- <define name="PRELOAD_ALL" /> -->
-	<define name="PRELOAD_ALL" unless="web"/>
-	<define name="NO_PRELOAD_ALL" unless="PRELOAD_ALL"/>
+	<define name="PRELOAD_ALL" /> <!-- easiest fix of my life -->
+	<!--<define name="PRELOAD_ALL" unless="web"/>
+	<define name="NO_PRELOAD_ALL" unless="PRELOAD_ALL"/>-->
 	
 	<library name="videos"        preload="true" />
 	<section if="PRELOAD_ALL">
@@ -59,7 +59,7 @@
 	
 	<assets path="assets/songs"         library="songs"         exclude="*.mp3"/>
 	<assets path="assets/shared"        library="shared"        exclude="*.mp3"/>
-	<assets path="assets/android" if="android || web"/>
+	<assets path="assets/android" if="android"/>
 	
 	<!-- <template path='mods' /> -->
 	

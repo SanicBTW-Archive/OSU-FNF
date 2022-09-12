@@ -253,24 +253,6 @@ class PlayState extends MusicBeatState
 			botplayTxt.y = timeBarBG.y - 78;
 		}
 
-		#if html5
-		pauseBtn = new FlxButton(FlxG.width - 200, 100, "Pause", function(){
-			persistentUpdate = false;
-			persistentDraw = true;
-			paused = true;
-			if(FlxG.sound.music != null) {
-				FlxG.sound.music.pause();
-				vocals.pause();
-			}
-			openSubState(new PauseSubState(0, 0));
-		});
-		pauseBtn.setGraphicSize(Std.int(pauseBtn.width) * 2);
-		pauseBtn.label.setFormat("VCR OSD Mono", 16, FlxColor.BLACK, CENTER);
-		pauseBtn.visible = true;
-		pauseBtn.scrollFactor.set();
-		add(pauseBtn);
-		#end
-
 		strumLineNotes.cameras = [camHUD];
 		grpNoteSplashes.cameras = [camHUD];
 		notes.cameras = [camHUD];
@@ -283,21 +265,15 @@ class PlayState extends MusicBeatState
 		timeBarBG.cameras = [camHUD];
 		timeTxt.cameras = [camHUD];
 
-		#if (android || html5)
+		#if (android)
 		addAndroidControls();
 		androidControls.visible = true;
 		addPadCamera();
 		#end
 
-		#if html5
-		pauseBtn.cameras = [camOther];
-		#end
-
-
 		startingSong = true;
 		updateTime = true;
 
-		var daSong:String = curSong.toLowerCase();
 		startCountdown();
 		RecalculateRating();
 

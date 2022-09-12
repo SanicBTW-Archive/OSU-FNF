@@ -1,5 +1,7 @@
 package;
 
+import lime.app.Future;
+import openfl.system.System;
 import flash.text.TextField;
 import flixel.FlxG;
 import flixel.FlxSprite;
@@ -58,9 +60,7 @@ class FreeplayState extends MusicBeatState
 		PlayState.voices = null;
 		PlayState.SONG = null;
 
-		#if sys
 		System.gc();
-		#end
 
 		transIn = FlxTransitionableState.defaultTransIn;
 		transOut = FlxTransitionableState.defaultTransOut;
@@ -107,12 +107,34 @@ class FreeplayState extends MusicBeatState
 				addSong(onlineSongItemName, i, "face", FlxColor.fromRGB(0, 0, 0), true);
 				onlineSongs.set(onlineSongItemName, [chartPath, instPath, voicesPath, onlineSongItems[i].difficulty]);
 				
-				#if sys
 				System.gc();
-				#end
 			}
+			regenMenu();
 		}
 		http.request();
+		#else
+		var request = js.Browser.createXMLHttpRequest();
+		request.addEventListener('load', function()
+		{
+			var onlineSongItems:Dynamic = cast Json.parse(request.responseText).items;
+			for(i in 0...onlineSongItems.length)
+			{
+				var onlineSongItemName = onlineSongItems[i].song_name;
+
+				var chartPath = 'http://sancopublic.ddns.net:5430/api/files/fnf_charts/' + onlineSongItems[i].id + "/" + onlineSongItems[i].chart_file;
+				var instPath = 'http://sancopublic.ddns.net:5430/api/files/fnf_charts/' + onlineSongItems[i].id + "/" + onlineSongItems[i].inst;
+				var voicesPath = 'http://sancopublic.ddns.net:5430/api/files/fnf_charts/' + onlineSongItems[i].id + "/" + onlineSongItems[i].voices;
+
+				addSong(onlineSongItemName, i, "face", FlxColor.fromRGB(0, 0, 0), true);
+				onlineSongs.set(onlineSongItemName, [chartPath, instPath, voicesPath, onlineSongItems[i].difficulty]);
+
+				System.gc();
+			}
+
+			regenMenu();
+		});
+		request.open("GET", 'http://sancopublic.ddns.net:5430/api/collections/fnf_charts/records');
+		request.send();
 		#end
 
 		bg = new FlxSprite().loadGraphic(Paths.image('menuDesat'));
@@ -123,24 +145,6 @@ class FreeplayState extends MusicBeatState
 		grpSongs = new FlxTypedGroup<Alphabet>();
 		add(grpSongs);
 
-		for (i in 0...songs.length)
-		{
-			var songText:Alphabet = new Alphabet(0, (70 * i) + 30, songs[i].songName, true, false);
-			songText.isMenuItem = true;
-			songText.targetY = i;
-			grpSongs.add(songText);
-
-			if (songText.width > 980)
-			{
-				var textScale:Float = 980 / songText.width;
-				songText.scale.x = textScale;
-				for (letter in songText.lettersArray)
-				{
-					letter.x *= textScale;
-					letter.offset.x *= textScale;
-				}
-			}
-		}
 		WeekData.setDirectoryFromWeek();
 
 		scoreText = new FlxText(FlxG.width * 0.7, 5, 0, "", 32);
@@ -162,24 +166,8 @@ class FreeplayState extends MusicBeatState
 
 		changeSelection();
 
-		var textBG:FlxSprite = new FlxSprite(0, FlxG.height - 26).makeGraphic(FlxG.width, 26, 0xFF000000);
-		textBG.alpha = 0.6;
-		add(textBG);
-
-		#if PRELOAD_ALL
-		var leText:String = "Press SPACE to listen to the Song / Press RESET to Reset your Score and Accuracy.";
-		var size:Int = 16;
-		#else
-		var leText:String = "Press RESET to Reset your Score and Accuracy.";
-		var size:Int = 18;
-		#end
-		var text:FlxText = new FlxText(textBG.x, textBG.y + 4, FlxG.width, leText, size);
-		text.setFormat(Paths.font("vcr.ttf"), size, FlxColor.WHITE, RIGHT);
-		text.scrollFactor.set();
-		add(text);
-
-		#if (android || html5)
-		addVirtualPad(UP_DOWN, A_B_C);
+		#if (android)
+		addVirtualPad(UP_DOWN, A_B);
 		#end
 
 		super.create();
@@ -263,35 +251,11 @@ class FreeplayState extends MusicBeatState
 			MusicBeatState.switchState(new MainMenuState());
 		}
 
-		if(space)
-		{
-			if(instPlaying != curSelected)
-			{
-				#if PRELOAD_ALL
-				destroyFreeplayVocals();
-				FlxG.sound.music.volume = 0;
-				var poop:String = Highscore.formatSong(songs[curSelected].songName.toLowerCase(), curDifficulty);
-				PlayState.SONG = Song.loadFromJson(poop, songs[curSelected].songName.toLowerCase());
-				if (PlayState.SONG.needsVoices)
-					vocals = new FlxSound().loadEmbedded(Paths.voices(PlayState.SONG.song));
-				else
-					vocals = new FlxSound();
-
-				FlxG.sound.list.add(vocals);
-				FlxG.sound.playMusic(Paths.inst(PlayState.SONG.song), 0.7);
-				vocals.play();
-				vocals.persist = true;
-				vocals.looped = true;
-				vocals.volume = 0.7;
-				instPlaying = curSelected;
-				#end
-			}
-		}
-
-		else if (accepted)
+		if (accepted) //???
 		{
 			if(songs[curSelected].onlineSong)
 			{
+				#if !html5
 				var http = new haxe.Http(onlineSongs[songs[curSelected].songName][0]);
 				http.onData = function(data:String)
 				{
@@ -324,11 +288,86 @@ class FreeplayState extends MusicBeatState
 		
 					destroyFreeplayVocals();
 					
-					#if sys
 					System.gc();
-					#end
 				}
 				http.request();
+				#else
+				PlayState.isStoryMode = false;
+				PlayState.storyDifficulty = curDifficulty;
+				PlayState.onlineSong = true;
+
+				var request = js.Browser.createXMLHttpRequest();
+				request.addEventListener('load', function()
+				{
+					System.gc();
+
+					trace("Got chart data");
+					PlayState.SONG = Song.parseJSONshit(request.responseText);
+					trace("Now trying to get inst using Future");
+					Sound.loadFromFile(onlineSongs[songs[curSelected].songName][1]).then(function(inst)
+					{
+						trace("Successfully got inst");
+						PlayState.inst = inst;
+						return Future.withValue(inst);
+					});
+					if(PlayState.SONG.needsVoices)
+					{
+						trace("Song needs voices, trying to get vocals using Future");
+						Sound.loadFromFile(onlineSongs[songs[curSelected].songName][2]).then(function(vocals)
+						{
+							trace("Successfully got vocals");
+							PlayState.voices = vocals;
+							trace("Seems like nothing more is needed, switching to Playstate");
+
+							persistentUpdate = false;
+
+							if(FlxG.sound.music != null){
+								FlxG.sound.music.volume = 0;
+							}
+		
+							destroyFreeplayVocals();
+
+							if(colorTween != null) {
+								colorTween.cancel();
+							}
+
+							if(FlxG.keys.pressed.SHIFT)
+							{
+								LoadingState.loadAndSwitchState(new ChartingState());
+							}
+							else
+							{
+								LoadingState.loadAndSwitchState(new PlayState());
+							}
+							return Future.withValue(vocals);
+						});
+					}
+					else
+					{
+						trace("Seems like nothing more is needed, switching to Playstate");
+						persistentUpdate = false;
+						if(FlxG.sound.music != null){
+							FlxG.sound.music.volume = 0;
+						}
+	
+						destroyFreeplayVocals();
+						
+						if(colorTween != null) {
+							colorTween.cancel();
+						}
+						if(FlxG.keys.pressed.SHIFT)
+						{
+							LoadingState.loadAndSwitchState(new ChartingState());
+						}
+						else
+						{
+							LoadingState.loadAndSwitchState(new PlayState());
+						}
+					}
+				});
+				request.open("GET", onlineSongs[songs[curSelected].songName][0]); //we tryna to get the chart data
+				request.send();
+				#end
 			}
 			else
 			{
@@ -362,6 +401,11 @@ class FreeplayState extends MusicBeatState
 	
 				destroyFreeplayVocals();
 			}
+		}
+
+		if(controls.RESET)
+		{
+			regenMenu();
 		}
 
 		if(songs[curSelected].onlineSong)
@@ -453,6 +497,33 @@ class FreeplayState extends MusicBeatState
 		diffText.x = Std.int(scoreBG.x + (scoreBG.width / 2));
 		diffText.x -= diffText.width / 2;
 	}
+
+	function regenMenu()
+    {
+        grpSongs.clear();
+
+        for(i in 0...songs.length)
+        {
+			var songText:Alphabet = new Alphabet(0, (70 * i) + 30, songs[i].songName, true, false);
+			songText.isMenuItem = true;
+			songText.targetY = i;
+			grpSongs.add(songText);
+
+			if (songText.width > 980)
+			{
+				var textScale:Float = 980 / songText.width;
+				songText.scale.x = textScale;
+				for (letter in songText.lettersArray)
+				{
+					letter.x *= textScale;
+					letter.offset.x *= textScale;
+				}
+			}
+        }
+
+        curSelected = 0;
+        changeSelection();
+    }
 }
 
 class SongMetadata

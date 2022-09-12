@@ -53,7 +53,7 @@ class OptionsState extends MusicBeatState
 		}
 		changeSelection();
 
-		#if (android || html5)
+		#if (android)
 		addVirtualPad(LEFT_FULL, A_B);
 		#end
 
@@ -84,7 +84,7 @@ class OptionsState extends MusicBeatState
 		}
 
 		if (controls.ACCEPT) {
-			#if (android || html5)
+			#if (android)
 			removeVirtualPad();
 			#end
 			for (item in grpOptions.members) {
@@ -189,7 +189,7 @@ class ControlsSubstate extends MusicBeatSubstate {
 		}
 		changeSelection();
 
-		#if (android || html5)
+		#if (android)
 		addVirtualPad(LEFT_FULL, A_B);
 		#end
 	}
@@ -506,7 +506,7 @@ class PreferencesSubstate extends MusicBeatSubstate
 		changeSelection();
 		reloadValues();
 
-		#if (android || html5)
+		#if (android)
 		addVirtualPad(LEFT_FULL, A_B);
 		#end
 	}

@@ -384,7 +384,7 @@ class Controls extends FlxActionSet
 	}
 	#end
 
-	#if (android || html5)
+	#if (android)
 	public var trackedinputsUI:Array<FlxActionInput> = [];
 	public var trackedinputsNOTES:Array<FlxActionInput> = [];
 
